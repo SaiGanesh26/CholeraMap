@@ -1,0 +1,929 @@
+	<!DOCTYPE html>
+	<html>
+
+	<head>
+		<link rel="stylesheet" href="styles.css">
+
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+	</head>
+
+
+	<body>
+
+		<div>
+			<div class="title">
+				<h1>London's 1854 Cholera Outbreak Map</h1>
+			</div>
+			<div class="graph_holder">
+				<div id="cholera_map"></div>
+				<div class="content">
+					<div id="labels"></div>
+					<div class="button_holder">
+						<input name="GenderButton" type="button" value="Gender" class="gender" onclick="death_nodes()" />
+						<input name="Age" type="button" value="Age" class="age" onclick="ageDeathNodes()" />
+					</div>
+					<div class="docvideo">
+						<h4><a href="documentation.html"> Documentaion </a></h4>
+						<h4><a href="video.html"> Presentation Video </a></h4>
+					</div>
+				</div>
+				
+				<div class="graph2_holder">
+					<div id="line_graph"></div>
+				</div>
+			</div>
+
+		</div>
+
+
+		<script>
+			//The SVG Container
+			var width = 600;
+			var height = 600;
+			var size = 30;
+
+			var drag = d3.behavior.drag()
+				.origin(function (d) {
+					return d;
+				})
+				.on("dragstart", dragstarted)
+				.on("drag", dragged)
+				.on("dragend", dragended);
+
+			var zoom = d3.behavior.zoom().scaleExtent([1, 10]).on("zoom", zoomed);
+
+
+			var svgContainer = d3.select("#cholera_map").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.call(zoom)
+				.attr("transform",
+					"translate(-40,50)");
+
+			svgContainer.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 15)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.style("font-weight", "bold")
+				.style("text-decoration", "underline")
+				.text("Cholera Map Visualization");
+
+			var container = svgContainer.append("g");
+
+			function zoomed() {
+				container.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+			}
+
+			function dragstarted(d) {
+				d3.event.sourceEvent.stopPropagation();
+				d3.select(this).classed("dragging", true);
+			}
+
+			function dragged(d) {
+				d3.select(this).attr("cx", d.x = d3.event.x).attr("cy", d.y = d3.event.y);
+			}
+
+			function dragended(d) {
+				d3.select(this).classed("dragging", false);
+			}
+
+			function zoomed() {
+				svgContainer.attr("transform",
+					"translate(" + zoom.translate() + ")" +
+					"scale(" + zoom.scale() + ")"
+				);
+			}
+
+			function interpolateZoom(translate, scale) {
+				var self = this;
+				return d3.transition().duration(350).tween("zoom", function () {
+					var iTranslate = d3.interpolate(zoom.translate(), translate),
+						iScale = d3.interpolate(zoom.scale(), scale);
+					return function (t) {
+						zoom
+							.scale(iScale(t))
+							.translate(iTranslate(t));
+						zoomed();
+					};
+				});
+			}
+
+			function zoomClick() {
+				var clicked = d3.event.target,
+					direction = 1,
+					factor = 0.2,
+					target_zoom = 1,
+					center = [width / 2 + 200, height / 2 - 100],
+					extent = zoom.scaleExtent(),
+					translate = zoom.translate(),
+					translate0 = [],
+					l = [],
+					view = {
+						x: translate[0],
+						y: translate[1],
+						k: zoom.scale()
+					};
+
+				d3.event.preventDefault();
+				direction = (this.id === 'zoom_in') ? 1 : -1;
+				target_zoom = zoom.scale() * (1 + factor * direction);
+
+				if (target_zoom < extent[0] || target_zoom > extent[1]) {
+					return false;
+				}
+
+				translate0 = [(center[0] - view.x) / view.k, (center[1] - view.y) / view.k];
+				view.k = target_zoom;
+				l = [translate0[0] * view.k + view.x, translate0[1] * view.k + view.y];
+
+				view.x += center[0] - l[0];
+				view.y += center[1] - l[1];
+
+				interpolateZoom([view.x, view.y], view.k);
+			}
+
+			d3.selectAll('button').on('click', zoomClick);
+
+			var div1 = d3.select("#cholera_map").append("div")
+				.attr("class", "tooltip1")
+				.style("opacity", 0);
+
+			var div2 = d3.select("#cholera_map").append("div")
+				.attr("class", "tooltip2")
+				.style("opacity", 0);
+
+
+
+			d3.json('streets.json', function (data) //streets data
+				{
+					console.log("streets", data);
+
+					// loop is to get all the street coordinates of each array
+					for (var i = 0; i < data.length; i++) {
+						var lineData = data[i]
+
+						var lineFunction = d3.svg.line()
+							.x(function (d) {
+								return d.x * size;
+							})
+							.y(function (d) {
+								return height - d.y * size;
+							})
+							.interpolate("linear");
+
+
+						//The line SVG Path we draw
+						var lineGraph = svgContainer.append("path")
+							.attr("d", lineFunction(lineData))
+							.attr("stroke", "black")
+							.attr("stroke-width", 1.5)
+							.attr("fill", "none");
+					}
+				})
+
+			var street = [{
+					name: 'OXFORD STREET',
+					x: 198,
+					y: 100,
+					rotate: -10
+				}, {
+					name: 'BROAD STREET',
+					x: 300,
+					y: 220,
+					rotate: -15
+				},
+				{
+					name: 'DEAN STREET',
+					x: 500,
+					y: 200,
+					rotate: 65
+				}, {
+					name: 'NEWBOND STREET',
+					x: 120,
+					y: 280,
+					rotate: 65
+				},
+				{
+					name: 'REGENTS QUADRANT',
+					x: 325,
+					y: 430,
+					rotate: 0
+				}, {
+					name: 'BREWER STREET',
+					x: 275,
+					y: 400,
+					rotate: -10
+				},
+				{
+					name: 'WORK HOUSE',
+					x: 325,
+					y: 192,
+					rotate: -23
+				}, {
+					name: 'Brewery',
+					x: 411,
+					y: 212,
+					rotate: 65
+				}
+			]
+
+			var workHouse = [{
+				x: 311,
+				y: 170,
+				w: 45,
+				h: 38,
+				rotate: -25
+			}]
+			var brewery = [{
+				x: 417,
+				y: 207.5,
+				w: 30,
+				h: 16,
+				rotate: 62.5
+			}]
+
+			var work = svgContainer.append("rect")
+				.data(workHouse)
+				.attr("transform", function (d) {
+					return "rotate(" + d.rotate + " " + d.x + "," + d.y + ")";
+				})
+				.attr("x", function (d) {
+					return d.x;
+				})
+				.attr("y", function (d) {
+					return d.y;
+				})
+				.attr("width", function (d) {
+					return d.w;
+				})
+				.attr("height", function (d) {
+					return d.h;
+				})
+				.attr("stroke", 'blue')
+				.attr("stroke-opacity", 0.8)
+				.style("fill", "#636363");
+
+			
+
+			var bre = svgContainer.append("rect")
+				.data(brewery)
+				.attr("transform", function (d) {
+					return "rotate(" + d.rotate + " " + d.x + "," + d.y + ")";
+				})
+				.attr("x", function (d) {
+					return d.x;
+				})
+				.attr("y", function (d) {
+					return d.y;
+				})
+				.attr("width", function (d) {
+					return d.w;
+				})
+				.attr("height", function (d) {
+					return d.h;
+				})
+				.style("fill", "#31a354");
+
+		
+			street.forEach(function (d){
+				console.log(d) 
+				svgContainer.append("text")
+				.attr("transform", "rotate(" + d.rotate + " " + d.x + "," + d.y + ")")
+				.attr("x", d.x)
+				.attr("y", d.y+20) // 20 is the margin size
+				.style("font-size", "14px")
+				.text(d.name)
+				.attr("stroke","#4d4d4d");
+			})
+				
+				
+			// pumps data			
+			d3.csv("pumps.csv", function (pump) {
+				console.log("pumps", pump);
+
+				var droppump = svgContainer.selectAll("image")
+					.data(pump)
+					.enter()
+					.append('image')
+					.attr("xlink:href",
+						"https://img2.cgtrader.com/items/988792/32803f4c5d/hand-water-pump-old-3d-model-max-obj-3ds-fbx-c4d.jpg"
+					)
+					.attr("x", function (d) {
+						return d.x * size - 20;
+					})
+					.attr("y", function (d) {
+						return height - d.y * size;
+					})
+					.attr("width", "40")
+					.attr("height", "40")
+					.on("mouseover", function (d) {
+						div1.transition()
+							.duration(500)
+							.style("opacity", .9);
+						div1.html("Pump")
+							.style("left", (d3.event.pageX) + "px")
+							.style("top", (d3.event.pageY - 28) + "px");
+					})
+					.on("mouseout", function () {
+						div1.transition()
+							.duration(500)
+							.style("opacity", 0);
+					});
+
+			})
+
+			function death_nodes() {
+				// deaths_age_sex data
+				d3.selectAll("#ageDeathNodes").remove();
+
+
+				d3.csv("deaths_age_sex.csv", function (deaths) {
+					console.log("deaths_age_sex", deaths);
+
+					var dropdeaths = svgContainer.selectAll('circle')
+						.data(deaths)
+						.enter()
+						.append('circle')
+						.attr({
+							cx: function (d) {
+								return d.x * size;
+							},
+							cy: function (d) {
+								return height - d.y * size;
+							},
+							r: function (d) {
+								return 3;
+							},
+							fill: function (d) {
+								if (d.gender == 0) {
+									return "rgb(239, 138, 98)"
+								} else {
+									return "rgb(103, 169, 207)"
+								}
+							}
+						})
+						.attr("id", "death_points")
+						.attr("stroke", "black")
+						.attr("stroke-width", 1)
+						.on("mouseover", function (d) {
+							div2.transition()
+								.duration(6)
+								.style("opacity", .9);
+
+							if (d.gender == 0) {
+								var sex = "Male";
+							} else {
+								var sex = "Female";
+							}
+
+							if (d.age == 0) {
+								var age_cat = "0-10";
+							} else if (d.age == 1) {
+								var age_cat = "11-20";
+							} else if (d.age == 2) {
+								var age_cat = "21-40";
+							} else if (d.age == 3) {
+								var age_cat = "41-60";
+							} else if (d.age == 4) {
+								var age_cat = "61-80";
+							} else {
+								var age_cat = "> 80";
+							}
+
+							div2.html("Gender: " + "<br/>" + sex + "<br/>" + "Age_Cat: " + "<br/>" + age_cat)
+								.style("left", (d3.event.pageX) + "px")
+								.style("top", (d3.event.pageY - 28) + "px");
+						})
+
+						.on("mouseout", function () {
+
+							div2.transition()
+								.duration(500)
+								.style("opacity", 0);
+						});
+
+				})
+
+			}
+
+			function updated_deaths(date) {
+				d3.csv("deathdays.csv", function (update_deaths) {
+					var past = 0,
+						present = 0;
+
+					console.log("dates", date);
+
+					for (i = 0; i < update_deaths.length; i++) {
+						past = past + parseFloat(update_deaths[i].deaths);
+						if (update_deaths[i].date == date) {
+							past = past - parseFloat(update_deaths[i].deaths);
+							present = parseFloat(update_deaths[i].deaths);
+							break;
+						}
+					}
+
+					d3.csv("deaths_age_sex.csv", function (update_deaths) {
+						update_deaths.forEach(function (d, i) {
+							// console.log(update_deaths)
+							console.log(past)
+							console.log(present)
+
+							var dropdeaths = svgContainer.selectAll('circle')
+								.data(update_deaths)
+								.enter()
+								.append('circle')
+								.attr("cx", function (d, i) {
+									if (i < present + past) {
+										return d.x * size;
+									}
+								})
+								.attr("cy", function (d, i) {
+									if (i < present + past) {
+										return height - d.y * size;
+									}
+								})
+								.attr("r", 3)
+								.attr({
+									fill: function (d) {
+										if (d.gender == 0) {
+											return "rgb(239, 138, 98)"
+										} else {
+											return "rgb(103, 169, 207)"
+										}
+									}
+								})
+								.attr("id", "death_points")
+								.attr("stroke", "black")
+								.attr("stroke-width", 1)
+								.on("mouseover", function (d) {
+									div2.transition()
+										.duration(6)
+										.style("opacity", .9);
+
+									if (d.gender == 0) {
+										var sex = "Male";
+									} else {
+										var sex = "Female";
+									}
+
+									if (d.age == 0) {
+										var age_cat = "0-10";
+									} else if (d.age == 1) {
+										var age_cat = "11-20";
+									} else if (d.age == 2) {
+										var age_cat = "21-40";
+									} else if (d.age == 3) {
+										var age_cat = "41-60";
+									} else if (d.age == 4) {
+										var age_cat = "61-80";
+									} else {
+										var age_cat = "> 80";
+									}
+
+									div2.html("Gender: " + "<br/>" + sex + "<br/>" + "Age_Cat: " +
+											"<br/>" + age_cat)
+										.style("left", (d3.event.pageX) + "px")
+										.style("top", (d3.event.pageY - 28) + "px");
+								})
+
+								.on("mouseout", function () {
+									div2.transition()
+										.duration(500)
+										.style("opacity", 0);
+									death_nodes()
+								});
+						})
+
+					})
+				})
+			}
+
+			function ageDeathNodes() {
+				d3.selectAll("#death_points").remove();
+
+
+				d3.csv("deaths_age_sex.csv", function (update_deaths) {
+
+					colors = ["#c51b7d", "#e9a3c9", "#fde0ef", "#e6f5d0", "#a1d76a", "#4d9221"];
+					var dropdeaths = svgContainer.selectAll('circle')
+						.data(update_deaths)
+						.enter()
+						.append('circle')
+						.attr({
+							cx: function (d) {
+								return d.x * size;
+							},
+							cy: function (d) {
+								return height - d.y * size;
+							},
+							r: function (d) {
+								return 3;
+							},
+							fill: function (d) {
+								var age = parseInt(d.age);
+								return colors[age];
+							}
+						})
+						.attr("id", "ageDeathNodes")
+						.attr("stroke", "black")
+						.attr("stroke-width", 1)
+						.on("mouseover", function (d) {
+							div2.transition()
+								.duration(6)
+								.style("opacity", .9);
+
+							if (d.gender == 0) {
+								var sex = "Male";
+							} else {
+								var sex = "Female";
+							}
+
+							if (d.age == 0) {
+								var age_cat = "0-10";
+							} else if (d.age == 1) {
+								var age_cat = "11-20";
+							} else if (d.age == 2) {
+								var age_cat = "21-40";
+							} else if (d.age == 3) {
+								var age_cat = "41-60";
+							} else if (d.age == 4) {
+								var age_cat = "61-80";
+							} else {
+								var age_cat = "> 80";
+							}
+
+							div2.html("Gender: " + "<br/>" + sex + "<br/>" + "Age_Cat: " + "<br/>" + age_cat)
+								.style("left", (d3.event.pageX) + "px")
+								.style("top", (d3.event.pageY - 28) + "px");
+						})
+
+						.on("mouseout", function () {
+
+							div2.transition()
+								.duration(500)
+								.style("opacity", 0);
+						});
+
+				})
+			}
+		</script>
+
+		<script>
+			width = 200;
+			height = 350;
+			var label1 = d3.select("#labels").append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.attr("transform",
+					"translate(-40,50)");
+			//Gender labels
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 15)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.style("font-weight", "bold")
+				.style("text-decoration", "underline")
+				.text("Gender");
+
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 45)
+				.attr("r", 7)
+				.attr("fill", "rgb(239, 138, 98)")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 50)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("Male");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 65)
+				.attr("r", 7)
+				.attr("fill", "rgb(103, 169, 207)")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 23 + width / 2)
+				.attr("y", 70)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("Female");
+			// age labels			
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 110)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.style("font-weight", "bold")
+				.style("text-decoration", "underline")
+				.text("Age");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 135)
+				.attr("r", 7)
+				.attr("fill", "#c51b7d")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 140)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("0-10");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 155)
+				.attr("r", 7)
+				.attr("fill", "#e9a3c9")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 160)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("11-20");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 175)
+				.attr("r", 7)
+				.attr("fill", "#fde0ef")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 180)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("21-40");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 195)
+				.attr("r", 7)
+				.attr("fill", "#e6f5d0")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 200)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("41-60");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 215)
+				.attr("r", 7)
+				.attr("fill", "#a1d76a")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 220)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("61-80");
+
+			label1.append("circle")
+				.attr("cx", width / 2 - 20)
+				.attr("cy", 235)
+				.attr("r", 7)
+				.attr("fill", "#4d9221")
+				.attr("stroke", "black")
+				.attr("stroke-width", 1.5);
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 240)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("> 80");
+
+			// other labels
+
+			label1.append("text")
+				.attr("x", 15 + width / 2)
+				.attr("y", 270)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.style("font-weight", "bold")
+				.style("text-decoration", "underline")
+				.text("Others");
+
+
+			label1.append("rect")
+				.attr("x",width/2 - 25)
+				.attr("y",280)
+				.attr("width",15)
+				.attr("height",15)
+				.attr("fill","#636363")
+				.attr("stroke","black")
+				.attr("stroke-width",1.5);
+			
+			label1.append("text")
+				.attr("x", 40 + width / 2)
+				.attr("y", 293)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("Work House");
+
+			label1.append("rect")
+				.attr("x",width/2 - 25)
+				.attr("y",300)
+				.attr("width",15)
+				.attr("height",15)
+				.attr("fill","#31a354")
+				.attr("stroke","black")
+				.attr("stroke-width",1.5);
+			
+			label1.append("text")
+				.attr("x", 40 + width / 2)
+				.attr("y", 313)
+				.attr("text-anchor", "middle")
+				.style("font-size", "18px")
+				.text("Brewery");
+
+			
+		</script>
+
+		<script>
+			// set the dimensions and margins of the graph
+			var margin = {
+				top: 10,
+				right: 30,
+				bottom: 30,
+				left: 40
+			};
+			width = 600,
+				height = 600;
+
+			// Parse the date / time
+			var parseDate = d3.time.format("%d-%b").parse;
+
+
+			// Set the ranges
+			var x = d3.time.scale().range([0, width / 2]);
+			var y = d3.scale.linear().range([height / 2, 0]);
+
+			// Define the axes
+			var xAxis = d3.svg.axis().scale(x)
+				.orient("bottom").tickSize(6).ticks(7);
+
+
+			var yAxis = d3.svg.axis().scale(y)
+				.orient("left").tickSize(6).ticks(7);
+
+			// Define the line
+			var valueline = d3.svg.line()
+				.x(function (d) {
+					return x(d.date);
+				})
+				.y(function (d) {
+					return y(d.deaths);
+				});
+
+
+
+			// Define the div for the tooltip
+			var div = d3.select("#line_graph").append("div")
+				.attr("class", "tooltip")
+				.style("opacity", 0);
+
+			// Adds the svg canvas
+			var svg = d3.select("#line_graph")
+				.append("svg")
+				.attr("width", width)
+				.attr("height", height)
+				.append("g")
+				.attr("transform",
+					"translate(150,50)");
+
+			svg.append("text")
+				.attr("x", (width / 2))
+				.attr("y", 0 - (margin.top))
+				.attr("text-anchor", "middle")
+				.style("font-size", "16px")
+				.style("font-weight", "bold")
+				.style("text-decoration", "underline")
+				.text("Number of Deaths vs Date of Deaths");
+
+			// Get the data
+			d3.csv("deathdays.csv", function (data) {
+
+
+				data.forEach(function (d) {
+					d.temp = d.date;
+					d.date = parseDate(d.date);
+					d.deaths = +d.deaths;
+				});
+
+				// Scale the range of the data
+				x.domain(d3.extent(data, function (d) {
+					return d.date;
+				}));
+				y.domain([0, d3.max(data, function (d) {
+					return d.deaths;
+				})]);
+
+
+				// Add the valueline path.
+				svg.append("path")
+					.attr("class", "line")
+					.attr("d", valueline(data));
+
+
+				// Add the dots
+				svg.selectAll("dot")
+					.data(data)
+					.enter().append("circle")
+					.attr("r", 3.5)
+					.style("fill", "rgb(99, 99, 99)")
+					.attr("cx", function (d) {
+						return x(d.date);
+					})
+					.attr("cy", function (d) {
+						return y(d.deaths);
+					})
+					.on("click", function (d, i) {
+						var total = 0;
+						for (j = 0; j <= i; j++) {
+							total = total + data[j].deaths
+						}
+
+						d3.selectAll("#death_points").remove();
+
+						updated_deaths(d.temp);
+
+						div.transition()
+							.duration(200)
+							.style("opacity", .9);
+
+						div.html(d.temp + "<br/>" + "Deaths:" + d.deaths + "<br/>" + "Total:" + total)
+							.style("left", (d3.event.pageX) + "px")
+							.style("top", (d3.event.pageY - 28) + "px");
+					})
+					.on("mouseout", function (d) {
+						div.transition()
+							.duration(500)
+							.style("opacity", 0);
+						death_nodes();
+					});
+
+
+				// Add the X Axis
+				svg.append("g")
+					.attr("class", "x axis")
+					.attr("transform", "translate(0," + width / 2 + ")")
+					.call(xAxis);
+
+				svg.append("text")
+					.attr("x", 175)
+					.attr("y", margin.bottom + 10 + height / 2)
+					.style("text-anchor", "end")
+					.style("font-size", "16px")
+					.style("font-weight", "bold")
+					.text("Dates");
+
+				// Add the Y Axis
+				svg.append("g")
+					.attr("class", "y axis")
+					.call(yAxis);
+
+				svg.append("text") // text label for the y-axis
+					.attr("y", 0 - margin.left)
+					.attr("x", 150 - (height / 2))
+					.attr("transform", "rotate(-90)")
+					.style("text-anchor", "end")
+					.style("font-size", "16px")
+					.style("font-weight", "bold")
+					.text("Deaths");
+
+
+
+			})
+
+			death_nodes()
+		</script>
+
+	</body>
+
+	</html>

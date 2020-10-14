@@ -1,0 +1,60 @@
+[
+    {
+        "categorie": "Male", 
+        "values": [
+            {
+                "deaths": 65, 
+                "rate": "0-10"
+            }, 
+            {
+                "deaths": 29, 
+                "rate": "11-20"
+            }, 
+            {
+                "deaths": 34, 
+                "rate": "21-40"
+            }, 
+            {
+                "deaths": 22, 
+                "rate": "41-60"
+            }, 
+            {
+                "deaths": 46, 
+                "rate": "61-80"
+            },
+            {
+                "deaths": 88, 
+                "rate": "> 80"
+            }
+        ]
+    }, 
+    {
+        "categorie": "Female", 
+        "values": [
+            {
+                "deaths": 78, 
+                "rate": "0-10"
+            }, 
+            {
+                "deaths": 19, 
+                "rate": "11-20"
+            }, 
+            {
+                "deaths": 24, 
+                "rate": "21-40"
+            }, 
+            {
+                "deaths": 35, 
+                "rate": "41-60"
+            }, 
+            {
+                "deaths": 45, 
+                "rate": "61-80"
+            },
+            {
+                "deaths": 86, 
+                "rate": "> 80"
+            }
+        ]
+    }
+]

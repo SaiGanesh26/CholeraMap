@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+    <style>
+
+        body {
+          font: 10px sans-serif;
+          align-items: center;
+        }
+        
+        .axis path,
+        .axis line {
+          fill: none;
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+        
+        .x.axis path {
+          display: flex;
+          stroke: "black"
+        }
+       h3{
+                margin-top: 3px;
+                margin-bottom: -10px;
+                font-size: large;
+            }
+
+        </style>
+        
+        </style>
+</head>
+<body>
+	<div class="title">
+            <h1 style="font-size: 200%;">Visualization Project-1 Documentation</h1>
+		    <h4 style="font-size: medium;"><a href="video.html" style="float:right; margin-right:30px;margin-bottom: 20px; color:rgb(180, 71, 71)">Project Video</a></h4>
+       	    <h4 style="font-size: medium;"><a href="index.html" style="float:right; margin-right:30px; color:rgb(180, 71, 71)">Cholera Map</a></h4>
+    </div>
+
+    <div class="doccontent">
+        <h3>Introduction of 1854 Cholera Outbreak </h3>
+            <p style="font-size: medium;">"In the mid-19th century, the Soho district of London had a serious problem with filth due to the large influx of people and a lack of proper sanitary services: the London sewer system had not reached Soho. Cowsheds, slaughter houses and grease-boiling dens lined the streets and contributed animal droppings, rotting fluids and other contaminants to the primitive Soho sewer system. Many cellars had cesspools underneath their floorboards, which formed from the sewers and filth seeping in from the outside. Since the cesspools were overrunning, the London government decided to dump the waste into the River Thames, contaminating the water supply. London had already suffered from a "series of debilitating cholera outbreaks". These included outbreaks in 1832 and 1849 which killed a total of 14,137 people."(Wikipedia,[1])</p>
+        
+        <h3>Design of Cholera Map Visualization</h3>
+            <ol style="font-size: medium;">
+                <li>
+                    At first, I have gone through the datasets involved with this visualization Map which consists of Street cordinates, Age category of of person, Gender, Count of deaths on each date from 19-Aug to 29-Sep, Cordinates of water pumps. 
+                </li>
+                <li>
+                    After observing these data I made my analysis on how to display this data using different graphs.
+                </li>
+                <img src="design.jpeg" alt="Fig: design process" style="width:400px;height:250px;">
+                <li>
+                    Then I started uploading files data using d3.js library, and plotted the lines using street co-ordinates, displayed the pump image on the given pump co-ordinates and deaths, by which my first visualization I have got is following,
+                </li>
+                 <img src="Screenshot (17).png" alt="Fig: design process" style="width:400px;height:250px;">
+                <li>
+                    Then after I have dropped the street names, followed by plotting the line graph
+                </li>
+                <li>
+                    The circles displayed on chlera map indicate deaths and are default categorized by gender unless the age button is clicked.
+                </li>
+                <li>
+                    I have displayed the buttons that indicate Gender and Age when clicked, the color of the deaths displayed on cholera map visualization gets changed accordingly. 
+                </li>
+                <li>
+                    The labels are designated for the colors used in cholera map visualization. All the colors picked will remain effective for color blindness as they are picked from Color Brewer website[2].
+                </li>
+                <li>
+                    A line graph is plotted that displays the number of deaths corresponding to each date. Deaths on y-axes and Dates on x-axes. 
+                </li>
+                <li>
+                    The line graph has interaction with cholera map,i.e when you click the dot that displayed on linegraph then the number of deaths plotted on cholera map are show till the date that corresponds to the dot you have clicked based on gender.
+                </li>
+                
+                <li> The total deaths till the date, will be displayed on the tootl tip assigned to each date. It displays the date,deaths on that day and total deaths till that date</li>
+                 <img src="Screenshot.png" alt="Fig: design process" style="width:500px;height:350px;border: 2px solid black;align-self: center;">
+                
+                <li>One can zoom in and out on the cholera map by dragging(as I have implemented drag). To readjust we can zoom out and adjust accordingly to see all the values on the map.</li>
+                
+                <li>If cholera map visualization to be relocated to orginal position resfreshing the page is needed</li>
+                <li>
+                    A bar plot in the documentation is an additional plot that describes the count of deaths on y axis and gender on x axis that is subdivided again into age categories shown with different color. 
+                </li>
+                <li>
+                    A breif explanation on how this visualization works is given in the Project Video. The option is provided to switch from one page to another page. 
+                </li>
+            </ol>
+
+        <h3 style="font-size: medium;">Tools & Frameworks</h3>
+            <ul style="font-size: medium;">
+                <li>HTML</li>
+                <li>CSS</li>
+                <li>Javascript</li>
+                <li>d3.js</li>
+            </ul>
+
+            
+        <h3 style="font-size: medium;">References</h3>
+            <ol style="font-size: medium;">
+                <li>
+                    <a href="https://en.wikipedia.org/wiki/1854_Broad_Street_cholera_outbreak">https://en.wikipedia.org/wiki/1854_Broad_Street_cholera_outbreak</a>
+                </li>
+                <li>
+                    <a href="https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3">https://colorbrewer2.org/#type=sequential&scheme=BuGn&n=3</a>
+                </li>
+            </ol>
+            <div id="bar_chart"></div>  
+    
+    </div>
+    <script>
+                
+        var margin = {top: 20, right: 20, bottom: 30, left: 40},
+            width = 400 - margin.left - margin.right,
+            height = 350 - margin.top - margin.bottom;
+        
+        var x0 = d3.scale.ordinal()
+            .rangeRoundBands([0, width], .1);
+        
+        var x1 = d3.scale.ordinal();
+        
+        var y = d3.scale.linear()
+            .range([height, 0]);
+        
+        var xAxis = d3.svg.axis()
+            .scale(x0)
+            .tickSize(0)
+            .orient("bottom");
+        
+        var yAxis = d3.svg.axis()
+            .scale(y)
+            .orient("left");
+        
+        var color = d3.scale.ordinal()
+            .range(["#c51b7d", "#e9a3c9", "#fde0ef", "#e6f5d0", "#a1d76a", "#4d9221"]);
+        
+        var svg = d3.select('#bar_chart').append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+        
+        d3.json("bar.json", function(error, data) {
+        
+        var categoriesNames = data.map(function(d) { return d.categorie; });
+        var rateNames = data[0].values.map(function(d) { return d.rate; });
+        
+        x0.domain(categoriesNames);
+        x1.domain(rateNames).rangeRoundBands([0, x0.rangeBand()]);
+        y.domain([0, d3.max(data, function(categorie) { return d3.max(categorie.values, function(d) { return d.deaths; }); })]);
+        
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+        
+        svg.append("g")
+            .attr("class", "y axis")
+            .style('opacity','0')
+            .call(yAxis)
+        .append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 6)
+            .attr("dy", ".71em")
+            .style("text-anchor", "end")
+            .style('font-weight','bold')
+            .text("Deaths");
+        
+        svg.select('.y').transition().duration(500).delay(1300).style('opacity','1');
+        
+        var slice = svg.selectAll(".slice")
+            .data(data)
+            .enter().append("g")
+            .attr("class", "g")
+            .attr("transform",function(d) { return "translate(" + x0(d.categorie) + ",0)"; });
+        
+        slice.selectAll("rect")
+            .data(function(d) { return d.values; })
+        .enter().append("rect")
+            .attr("width", x1.rangeBand())
+            .attr("x", function(d) { return x1(d.rate); })
+            .style("fill", function(d) { return color(d.rate) })
+            .attr("y", function(d) { return y(0); })
+            .attr("height", function(d) { return height - y(0); })
+            .on("mouseover", function(d) {
+                d3.select(this).style("fill", d3.rgb(color(d.rate)).darker(2));
+            })
+            .on("mouseout", function(d) {
+                d3.select(this).style("fill", color(d.rate));
+            });
+        
+        slice.selectAll("rect")
+            .transition()
+            .delay(function (d) {return Math.random()*1000;})
+            .duration(1000)
+            .attr("y", function(d) { return y(d.deaths); })
+            .attr("height", function(d) { return height - y(d.deaths); });
+        
+          //Legend
+        var legend = svg.selectAll(".legend")
+            .data(data[0].values.map(function(d) { return d.rate; }).reverse())
+        .enter().append("g")
+            .attr("class", "legend")
+            .attr("transform", function(d,i) { return "translate(0," + i * 20 + ")"; })
+            .style("opacity","0");
+
+        legend.append("rect")
+            .attr("x", width - 18)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", function(d) { return color(d); });
+        legend.append("text")
+            .attr("x", width + 20)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", "end")
+            .text(function(d) {return d; });
+        
+        legend.transition().duration(500).delay(function(d,i){ return 1300 + 100 * i; }).style("opacity","1");
+        
+        });
+
+    </script>
+</body>
+</html>
